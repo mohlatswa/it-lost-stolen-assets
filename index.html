@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 /* ── Reset & Base ─────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1422,32 +1421,18 @@ function generateReview() {
   container.innerHTML = html;
 }
 
-/* ── EmailJS Configuration ──────────────────── */
+/* ── Power Automate Configuration ───────────── */
 /*
- *  SETUP INSTRUCTIONS (one-time):
- *  1. Go to https://www.emailjs.com/ and sign up (free — 200 emails/month)
- *  2. Dashboard → Email Services → Add New → choose Outlook/Gmail → connect your account
- *     Copy the Service ID (e.g. "service_abc123") into EMAILJS_SERVICE below.
- *  3. Dashboard → Email Templates → Create New:
- *       Subject:  {{subject}}
- *       To:       Lola.Maimane@gzican.com, Richard.Beukes@gzican.com, Hennie.Mohlatswa@gzican.com
- *       CC:       {{cc_email}}
- *       Body:     {{{message}}}     ← triple braces to preserve line breaks
- *     Save. Copy the Template ID (e.g. "template_xyz789") into EMAILJS_TEMPLATE below.
- *  4. Dashboard → Account → Public Key → copy it into EMAILJS_PUBLIC_KEY below.
+ *  Paste your Power Automate HTTP trigger URL below.
+ *  See setup instructions in the README or comments below.
  */
-const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';      // ← paste your public key here
-const EMAILJS_SERVICE     = 'YOUR_SERVICE_ID';      // ← paste your service ID here
-const EMAILJS_TEMPLATE    = 'YOUR_TEMPLATE_ID';     // ← paste your template ID here
+const FLOW_URL = 'YOUR_POWER_AUTOMATE_URL';  // ← paste your flow URL here
 
 const IT_TEAM = [
   'Lola.Maimane@gzican.com',
   'Richard.Beukes@gzican.com',
   'Hennie.Mohlatswa@gzican.com'
 ];
-
-// Initialise EmailJS
-emailjs.init(EMAILJS_PUBLIC_KEY);
 
 function cap(v) { return v ? v.charAt(0).toUpperCase() + v.slice(1) : '—'; }
 
@@ -1459,79 +1444,96 @@ function showToast(msg, type) {
   setTimeout(() => t.classList.remove('visible'), 5000);
 }
 
-/* ── Email Report Builder ───────────────────── */
-function buildEmailBody() {
-  const sep = '─'.repeat(50);
+/* ── HTML Email Builder ─────────────────────── */
+function esc(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function buildHtmlEmail() {
   const checkedDataTypes = [...document.querySelectorAll('input[name="dataTypes"]:checked')].map(c => c.value).join(', ');
   const incType = selectedIncidentType.toUpperCase();
+  const incColor = selectedIncidentType === 'stolen' ? '#d94444' : selectedIncidentType === 'lost' ? '#c9882e' : '#8495aa';
 
-  let body = '';
-  body += `IT ASSET INCIDENT REPORT\n`;
-  body += `Case Reference: ${caseNumber}\n`;
-  body += `Date Filed: ${new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })}\n`;
-  body += `Classification: ${incType}\n`;
-  body += `${sep}\n\n`;
-
-  body += `REPORTER INFORMATION\n${sep}\n`;
-  body += `Name:            ${val('reporterName')}\n`;
-  body += `Employee ID:     ${val('employeeId')}\n`;
-  body += `Department:      ${val('department')}\n`;
-  body += `Email:           ${val('email')}\n`;
-  if (val('phone'))   body += `Phone:           ${val('phone')}\n`;
-  if (val('manager')) body += `Manager:         ${val('manager')}\n`;
-  if (document.getElementById('onBehalf').checked) {
-    body += `Reporting for:   ${val('behalfName')}`;
-    if (val('behalfEmpId')) body += ` (${val('behalfEmpId')})`;
-    body += `\n`;
+  function row(label, value) {
+    if (!value) return '';
+    return `<tr><td style="padding:6px 12px;font-size:13px;color:#6b7280;font-weight:600;white-space:nowrap;vertical-align:top;">${esc(label)}</td><td style="padding:6px 12px;font-size:14px;color:#1f2937;">${esc(value)}</td></tr>`;
   }
-  body += `\n`;
+  function section(title, icon, rows) {
+    return `<div style="margin-bottom:20px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+      <div style="background:#f9fafb;padding:10px 16px;border-bottom:1px solid #e5e7eb;font-weight:700;font-size:14px;color:#374151;">${icon} ${esc(title)}</div>
+      <table style="width:100%;border-collapse:collapse;">${rows}</table></div>`;
+  }
 
-  body += `ASSET DETAILS\n${sep}\n`;
-  if (val('assetTag'))     body += `Asset Tag:       ${val('assetTag')}\n`;
-  body += `Asset Type:      ${val('assetType')}\n`;
-  if (val('assetMake'))    body += `Make:            ${val('assetMake')}\n`;
-  if (val('assetModel'))   body += `Model:           ${val('assetModel')}\n`;
-  if (val('serialNumber')) body += `Serial Number:   ${val('serialNumber')}\n`;
-  if (val('assetOS'))      body += `Operating System:${val('assetOS')}\n`;
-  if (val('assetDesc'))    body += `Description:     ${val('assetDesc')}\n`;
-  body += `\n`;
+  let html = `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:680px;margin:0 auto;background:#ffffff;padding:0;">`;
 
-  body += `INCIDENT DETAILS\n${sep}\n`;
-  body += `Classification:  ${incType}\n`;
-  body += `Date:            ${val('incidentDate')}\n`;
-  if (val('incidentTime'))    body += `Time:            ${val('incidentTime')}\n`;
-  body += `Location:        ${val('incidentLocation')}\n`;
-  if (val('locationType'))    body += `Location Type:   ${val('locationType')}\n`;
-  body += `\nCircumstances:\n${val('incidentDesc')}\n`;
+  // Header
+  html += `<div style="background:#111827;padding:24px 28px;border-radius:8px 8px 0 0;">
+    <h1 style="margin:0;font-size:20px;color:#ffffff;font-weight:700;">IT Asset Incident Report</h1>
+    <div style="margin-top:6px;font-size:13px;color:#9ca3af;">Case ${esc(caseNumber)} &nbsp;|&nbsp; Filed ${new Date().toLocaleDateString('en-ZA', { year:'numeric', month:'long', day:'numeric' })}</div>
+    <div style="margin-top:10px;display:inline-block;padding:4px 14px;border-radius:4px;font-size:12px;font-weight:700;letter-spacing:1px;color:#fff;background:${incColor};">${incType}</div>
+  </div>`;
+  html += `<div style="padding:24px 28px;">`;
+
+  // Reporter
+  let rRows = row('Name', val('reporterName'));
+  if (val('employeeId')) rRows += row('Employee ID', val('employeeId'));
+  rRows += row('Department', val('department'));
+  rRows += row('Email', val('email'));
+  if (val('phone'))   rRows += row('Phone', val('phone'));
+  if (val('manager')) rRows += row('Manager', val('manager'));
+  if (document.getElementById('onBehalf').checked) rRows += row('On Behalf Of', val('behalfName') + (val('behalfEmpId') ? ` (${val('behalfEmpId')})` : ''));
+  html += section('Reporter Information', '&#128100;', rRows);
+
+  // Asset
+  let aRows = '';
+  if (val('assetTag'))     aRows += row('Asset Tag', val('assetTag'));
+  aRows += row('Asset Type', val('assetType'));
+  if (val('assetMake'))    aRows += row('Make', val('assetMake'));
+  if (val('assetModel'))   aRows += row('Model', val('assetModel'));
+  if (val('serialNumber')) aRows += row('Serial Number', val('serialNumber'));
+  if (val('assetOS'))      aRows += row('OS', val('assetOS'));
+  if (val('assetDesc'))    aRows += row('Description', val('assetDesc'));
+  html += section('Asset Details', '&#128187;', aRows);
+
+  // Incident
+  let iRows = row('Classification', incType);
+  iRows += row('Date', val('incidentDate'));
+  if (val('incidentTime')) iRows += row('Time', val('incidentTime'));
+  iRows += row('Location', val('incidentLocation'));
+  if (val('locationType')) iRows += row('Location Type', val('locationType'));
+  iRows += row('Circumstances', val('incidentDesc'));
   if (selectedIncidentType === 'stolen') {
-    body += `\nPolice Report Filed: ${cap(radio('policeReport'))}\n`;
+    iRows += row('Police Report Filed', cap(radio('policeReport')));
     if (radio('policeReport') === 'yes') {
-      if (val('policeRef'))  body += `CAS Number:      ${val('policeRef')}\n`;
-      if (val('policeDept')) body += `Police Station:  ${val('policeDept')}\n`;
+      if (val('policeRef'))  iRows += row('CAS Number', val('policeRef'));
+      if (val('policeDept')) iRows += row('Police Station', val('policeDept'));
     }
   }
-  body += `\n`;
+  html += section('Incident Details', '&#128203;', iRows);
 
-  body += `DATA SECURITY ASSESSMENT\n${sep}\n`;
-  body += `Sensitive Data:      ${cap(radio('sensitiveData'))}\n`;
-  if (checkedDataTypes) body += `Data Types:          ${checkedDataTypes}\n`;
-  body += `Encrypted:           ${cap(radio('encrypted'))}\n`;
-  body += `Password Protected:  ${cap(radio('passwordProtected'))}\n`;
-  if (radio('remoteWipe')) body += `Remote Wipe:         ${cap(radio('remoteWipe'))}\n`;
-  if (radio('vpnActive'))  body += `VPN Active:          ${cap(radio('vpnActive'))}\n`;
-  if (val('securityNotes')) body += `\nAdditional Concerns:\n${val('securityNotes')}\n`;
-  body += `\n`;
+  // Security
+  let sRows = row('Sensitive Data', cap(radio('sensitiveData')));
+  if (checkedDataTypes) sRows += row('Data Types', checkedDataTypes);
+  sRows += row('Encrypted', cap(radio('encrypted')));
+  sRows += row('Password Protected', cap(radio('passwordProtected')));
+  if (radio('remoteWipe')) sRows += row('Remote Wipe', cap(radio('remoteWipe')));
+  if (radio('vpnActive'))  sRows += row('VPN Active', cap(radio('vpnActive')));
+  if (val('securityNotes')) sRows += row('Additional Concerns', val('securityNotes'));
+  html += section('Data Security Assessment', '&#128274;', sRows);
 
-  body += `${sep}\n`;
-  body += `This report was generated by the IT Asset Incident Reporting System.\n`;
-  body += `Please do not reply to this email — contact the reporter directly.\n`;
-
-  return body;
+  html += `<div style="margin-top:16px;padding:12px 16px;background:#f9fafb;border-radius:6px;font-size:12px;color:#9ca3af;text-align:center;">
+    This report was generated by the IT Asset Incident Reporting System.<br>Please contact the reporter directly for follow-up.
+  </div>`;
+  html += `</div></div>`;
+  return html;
 }
 
 /* ── Submit ──────────────────────────────────── */
 async function submitForm() {
   if (!validateStep(4)) return;
+
+  if (FLOW_URL === 'YOUR_POWER_AUTOMATE_URL') {
+    showToast('Power Automate URL not configured. Contact IT admin.', 'error');
+    return;
+  }
 
   const btn = document.getElementById('btnNext');
   const originalText = btn.textContent;
@@ -1541,15 +1543,21 @@ async function submitForm() {
   const reporterEmail = val('email');
   const incType = selectedIncidentType.toUpperCase();
   const subject = `[${incType}] IT Asset Incident Report — ${caseNumber} — ${val('assetType')}${val('assetTag') ? ' (' + val('assetTag') + ')' : ''}`;
-  const message = buildEmailBody();
+  const htmlBody = buildHtmlEmail();
 
   try {
-    // Send to IT team
-    await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
-      subject:   subject,
-      cc_email:  reporterEmail,
-      message:   message,
+    const response = await fetch(FLOW_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject:  subject,
+        to:       IT_TEAM.join(';'),
+        cc:       reporterEmail,
+        body:     htmlBody
+      })
     });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     // Show success
     document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
@@ -1569,10 +1577,10 @@ async function submitForm() {
     showToast('Report emailed successfully!', 'success');
 
   } catch (err) {
-    console.error('EmailJS error:', err);
+    console.error('Power Automate error:', err);
     btn.textContent = originalText;
     btn.classList.remove('btn-sending');
-    showToast('Failed to send email. Please check your connection and try again.', 'error');
+    showToast('Failed to send report. Please check your connection and try again.', 'error');
   }
 }
 
