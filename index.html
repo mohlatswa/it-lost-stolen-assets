@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 /* ── Reset & Base ─────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -712,6 +713,51 @@ body::before {
   .inline-radios { flex-direction: column; gap: 8px; }
 }
 
+/* ── Sending State ─────────────────────────── */
+.btn-sending {
+  background: linear-gradient(135deg, #5a6a80, #3a4a5e) !important;
+  pointer-events: none;
+  position: relative;
+  color: rgba(255,255,255,0.7) !important;
+}
+.btn-sending::after {
+  content: '';
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-left: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 14px 24px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 9999;
+  opacity: 0;
+  transition: all 0.35s ease;
+  pointer-events: none;
+  max-width: 500px;
+  text-align: center;
+}
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast-error {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(217,68,68,0.4);
+}
+.toast-success {
+  background: var(--success);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(34,168,96,0.4);
+}
+
 /* ── Print ─────────────────────────────────── */
 @media print {
   body { background: #fff; color: #111; }
@@ -852,9 +898,8 @@ body::before {
         </div>
         <div class="field-grid">
           <div class="field-group">
-            <label class="field-label">Asset Tag / ID <span class="req">*</span></label>
-            <input type="text" class="field-input mono" id="assetTag" placeholder="e.g. AST-2024-00781" required>
-            <div class="field-error" id="err-assetTag">Asset tag is required</div>
+            <label class="field-label">Asset Tag / ID</label>
+            <input type="text" class="field-input mono" id="assetTag" placeholder="e.g. AST-2024-00781 (if available)">
           </div>
           <div class="field-group">
             <label class="field-label">Asset Type <span class="req">*</span></label>
@@ -1100,16 +1145,13 @@ body::before {
       <div class="success-view" id="successView">
         <div class="success-icon">✓</div>
         <div class="success-title">Report Submitted Successfully</div>
-        <div class="success-msg">Your email client has been opened with the full incident report addressed to the IT Security team and a copy to yourself. Please review and click <strong>Send</strong> in your email client to complete the submission.</div>
+        <div class="success-msg">The incident report has been emailed automatically to the IT Security team and a confirmation copy has been sent to the reporter.</div>
         <div class="success-case" id="successCaseId"></div>
         <div class="email-recipients" style="margin-top: 20px; text-align: left; display: inline-block;">
-          <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); font-weight: 700; margin-bottom: 8px;">Report sent to:</div>
+          <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); font-weight: 700; margin-bottom: 8px;">Report emailed to:</div>
           <div id="recipientList" style="font-size: 0.82rem; color: var(--text-2); line-height: 1.8;"></div>
         </div>
-        <div style="margin-top: 24px;">
-          <button class="btn btn-next" onclick="resendEmail()" style="display: inline-flex; font-size: 0.82rem; padding: 10px 20px;">Re-open Email</button>
-        </div>
-        <div style="margin-top: 16px; color: var(--text-3); font-size: 0.78rem;">If your email client did not open, check your pop-up blocker settings.</div>
+        <div style="margin-top: 28px; color: var(--text-3); font-size: 0.78rem;">Please keep your case reference number for future correspondence.</div>
       </div>
 
       <!-- Navigation -->
@@ -1126,6 +1168,8 @@ body::before {
     <div class="classification-badge">Confidential</div>
   </footer>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <script>
 /* ── State ──────────────────────────────────── */
@@ -1239,7 +1283,6 @@ function validateStep(step) {
     const email = val('email');
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('err-email', 'email'); valid = false; }
   } else if (step === 1) {
-    if (!val('assetTag')) { showError('err-assetTag', 'assetTag'); valid = false; }
     if (!val('assetType')) { showError('err-assetType', 'assetType'); valid = false; }
   } else if (step === 2) {
     if (!selectedIncidentType) { showError('err-incidentType'); valid = false; }
@@ -1381,15 +1424,44 @@ function generateReview() {
   container.innerHTML = html;
 }
 
-/* ── Email Report Builder ───────────────────── */
+/* ── EmailJS Configuration ──────────────────── */
+/*
+ *  SETUP INSTRUCTIONS (one-time):
+ *  1. Go to https://www.emailjs.com/ and sign up (free — 200 emails/month)
+ *  2. Dashboard → Email Services → Add New → choose Outlook/Gmail → connect your account
+ *     Copy the Service ID (e.g. "service_abc123") into EMAILJS_SERVICE below.
+ *  3. Dashboard → Email Templates → Create New:
+ *       Subject:  {{subject}}
+ *       To:       Lola.Maimane@gzican.com, Richard.Beukes@gzican.com, Hennie.Mohlatswa@gzican.com
+ *       CC:       {{cc_email}}
+ *       Body:     {{{message}}}     ← triple braces to preserve line breaks
+ *     Save. Copy the Template ID (e.g. "template_xyz789") into EMAILJS_TEMPLATE below.
+ *  4. Dashboard → Account → Public Key → copy it into EMAILJS_PUBLIC_KEY below.
+ */
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';      // ← paste your public key here
+const EMAILJS_SERVICE     = 'YOUR_SERVICE_ID';      // ← paste your service ID here
+const EMAILJS_TEMPLATE    = 'YOUR_TEMPLATE_ID';     // ← paste your template ID here
+
 const IT_TEAM = [
   'Lola.Maimane@gzican.com',
   'Richard.Beukes@gzican.com',
   'Hennie.Mohlatswa@gzican.com'
 ];
 
+// Initialise EmailJS
+emailjs.init(EMAILJS_PUBLIC_KEY);
+
 function cap(v) { return v ? v.charAt(0).toUpperCase() + v.slice(1) : '—'; }
 
+/* ── Toast Notifications ────────────────────── */
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast toast-${type} visible`;
+  setTimeout(() => t.classList.remove('visible'), 5000);
+}
+
+/* ── Email Report Builder ───────────────────── */
 function buildEmailBody() {
   const sep = '─'.repeat(50);
   const checkedDataTypes = [...document.querySelectorAll('input[name="dataTypes"]:checked')].map(c => c.value).join(', ');
@@ -1417,7 +1489,7 @@ function buildEmailBody() {
   body += `\n`;
 
   body += `ASSET DETAILS\n${sep}\n`;
-  body += `Asset Tag:       ${val('assetTag')}\n`;
+  if (val('assetTag'))     body += `Asset Tag:       ${val('assetTag')}\n`;
   body += `Asset Type:      ${val('assetType')}\n`;
   if (val('assetMake'))    body += `Make:            ${val('assetMake')}\n`;
   if (val('assetModel'))   body += `Model:           ${val('assetModel')}\n`;
@@ -1459,51 +1531,51 @@ function buildEmailBody() {
   return body;
 }
 
-function buildMailtoUrl() {
-  const reporterEmail = val('email');
-  const incType = selectedIncidentType.toUpperCase();
-  const subject = `[${incType}] IT Asset Incident Report — ${caseNumber} — ${val('assetType')} (${val('assetTag')})`;
-  const body = buildEmailBody();
-
-  const toList = IT_TEAM.join(',');
-  const cc = reporterEmail;
-
-  return `mailto:${toList}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-}
-
-let lastMailtoUrl = '';
-
-function sendEmail() {
-  lastMailtoUrl = buildMailtoUrl();
-  window.location.href = lastMailtoUrl;
-}
-
-function resendEmail() {
-  if (lastMailtoUrl) window.location.href = lastMailtoUrl;
-}
-
 /* ── Submit ──────────────────────────────────── */
-function submitForm() {
+async function submitForm() {
   if (!validateStep(4)) return;
 
-  // Send the email
-  sendEmail();
+  const btn = document.getElementById('btnNext');
+  const originalText = btn.textContent;
+  btn.textContent = 'Sending Report...';
+  btn.classList.add('btn-sending');
 
-  // Show success view
-  document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
-  document.getElementById('formNav').style.display = 'none';
-  document.getElementById('successView').classList.add('active');
-  document.getElementById('successCaseId').textContent = caseNumber;
-
-  // Show recipient list
   const reporterEmail = val('email');
-  const allRecipients = [...IT_TEAM.map(e => `<div>IT Team: <span style="color:var(--text-1);font-family:var(--font-mono);font-size:0.8rem;">${e}</span></div>`),
-    `<div>Reporter (CC): <span style="color:var(--text-1);font-family:var(--font-mono);font-size:0.8rem;">${reporterEmail}</span></div>`
-  ];
-  document.getElementById('recipientList').innerHTML = allRecipients.join('');
+  const incType = selectedIncidentType.toUpperCase();
+  const subject = `[${incType}] IT Asset Incident Report — ${caseNumber} — ${val('assetType')}${val('assetTag') ? ' (' + val('assetTag') + ')' : ''}`;
+  const message = buildEmailBody();
 
-  document.querySelectorAll('.step-item').forEach(i => i.classList.add('completed'));
-  document.querySelectorAll('.step-item').forEach(i => i.classList.remove('active'));
+  try {
+    // Send to IT team
+    await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+      subject:   subject,
+      cc_email:  reporterEmail,
+      message:   message,
+    });
+
+    // Show success
+    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+    document.getElementById('formNav').style.display = 'none';
+    document.getElementById('successView').classList.add('active');
+    document.getElementById('successCaseId').textContent = caseNumber;
+
+    const allRecipients = [
+      ...IT_TEAM.map(e => `<div>IT Team: <span style="color:var(--text-1);font-family:var(--font-mono);font-size:0.8rem;">${e}</span></div>`),
+      `<div>Reporter (CC): <span style="color:var(--text-1);font-family:var(--font-mono);font-size:0.8rem;">${reporterEmail}</span></div>`
+    ];
+    document.getElementById('recipientList').innerHTML = allRecipients.join('');
+
+    document.querySelectorAll('.step-item').forEach(i => i.classList.add('completed'));
+    document.querySelectorAll('.step-item').forEach(i => i.classList.remove('active'));
+
+    showToast('Report emailed successfully!', 'success');
+
+  } catch (err) {
+    console.error('EmailJS error:', err);
+    btn.textContent = originalText;
+    btn.classList.remove('btn-sending');
+    showToast('Failed to send email. Please check your connection and try again.', 'error');
+  }
 }
 
 /* ── Init ────────────────────────────────────── */
