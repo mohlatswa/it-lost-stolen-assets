@@ -831,9 +831,8 @@ body::before {
             <div class="field-error" id="err-reporterName">Full name is required</div>
           </div>
           <div class="field-group">
-            <label class="field-label">Employee ID <span class="req">*</span></label>
-            <input type="text" class="field-input mono" id="employeeId" placeholder="e.g. EMP-004521" required>
-            <div class="field-error" id="err-employeeId">Employee ID is required</div>
+            <label class="field-label">Employee ID</label>
+            <input type="text" class="field-input mono" id="employeeId" placeholder="e.g. EMP-004521 (if available)">
           </div>
           <div class="field-group">
             <label class="field-label">Department <span class="req">*</span></label>
@@ -1278,7 +1277,6 @@ function validateStep(step) {
 
   if (step === 0) {
     if (!val('reporterName')) { showError('err-reporterName', 'reporterName'); valid = false; }
-    if (!val('employeeId')) { showError('err-employeeId', 'employeeId'); valid = false; }
     if (!val('department')) { showError('err-department', 'department'); valid = false; }
     const email = val('email');
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('err-email', 'email'); valid = false; }
