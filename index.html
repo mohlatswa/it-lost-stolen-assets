@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Asset Incident Report — Lost & Stolen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-deep: #060910;
+  --bg-primary: #0b1018;
+  --bg-card: #111a28;
+  --bg-card-hover: #162032;
+  --bg-input: #0a0f18;
+  --border: #1a2638;
+  --border-focus: #c9882e;
+  --accent: #c9882e;
+  --accent-glow: rgba(201, 136, 46, 0.25);
+  --accent-dim: rgba(201, 136, 46, 0.08);
+  --danger: #d94444;
+  --danger-dim: rgba(217, 68, 68, 0.1);
+  --danger-glow: rgba(217, 68, 68, 0.25);
+  --success: #22a860;
+  --success-dim: rgba(34, 168, 96, 0.1);
+  --warning: #d4a12e;
+  --text-1: #dfe6ee;
+  --text-2: #8495aa;
+  --text-3: #4a5a6e;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+html { font-size: 15px; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-deep);
+  color: var(--text-1);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(201,136,46,0.04), transparent),
+    radial-gradient(ellipse 60% 50% at 80% 90%, rgba(30,60,110,0.06), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── App Shell ─────────────────────────────── */
+.app { position: relative; z-index: 1; max-width: 1160px; margin: 0 auto; padding: 24px 20px 40px; }
+
+/* ── Header ────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.app-header::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--accent), #a06a18);
+  border-radius: 4px 0 0 4px;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo-mark {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), #8a5c14);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+.logo-mark::after {
+  content: '⚠';
+  font-size: 20px;
+  filter: brightness(2);
+}
+.header-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text-1);
+}
+.header-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-2);
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  margin-top: 1px;
+}
+.header-right { text-align: right; }
+.case-id {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+.case-date {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  margin-top: 3px;
+}
+
+/* ── Form Layout ───────────────────────────── */
+.form-wrapper {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* ── Sidebar Steps ─────────────────────────── */
+.step-sidebar {
+  width: 230px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 24px;
+}
+.step-list { list-style: none; }
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 0;
+  position: relative;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.step-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 44px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--border);
+  transition: background 0.4s;
+}
+.step-item.completed:not(:last-child)::after {
+  background: var(--accent);
+}
+.step-dot {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-3);
+  flex-shrink: 0;
+  transition: all 0.35s ease;
+  background: var(--bg-primary);
+}
+.step-item.active .step-dot {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-glow), 0 0 16px var(--accent-glow);
+  background: var(--accent-dim);
+}
+.step-item.completed .step-dot {
+  border-color: var(--success);
+  background: var(--success);
+  color: #fff;
+}
+.step-dot .check-icon { display: none; font-size: 14px; }
+.step-item.completed .step-dot .check-icon { display: block; }
+.step-item.completed .step-dot .step-num { display: none; }
+.step-info { padding-top: 4px; }
+.step-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-3);
+  transition: color 0.3s;
+  line-height: 1.3;
+}
+.step-item.active .step-label { color: var(--text-1); }
+.step-item.completed .step-label { color: var(--text-2); }
+.step-desc {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+/* ── Form Main ─────────────────────────────── */
+.form-main {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.form-step {
+  display: none;
+  padding: 36px 40px;
+  animation: fadeSlideIn 0.4s ease forwards;
+}
+.form-step.active { display: block; }
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.section-header {
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.section-number {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.3px;
+}
+.section-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  margin-top: 6px;
+}
+
+/* ── Form Fields ───────────────────────────── */
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 24px;
+}
+.field-grid .full-width { grid-column: 1 / -1; }
+.field-group { display: flex; flex-direction: column; }
+.field-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--text-2);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.field-label .req { color: var(--danger); font-size: 0.9rem; }
+.field-input,
+.field-select,
+.field-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-1);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.field-input::placeholder,
+.field-textarea::placeholder {
+  color: var(--text-3);
+}
+.field-input:focus,
+.field-select:focus,
+.field-textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.field-input.mono { font-family: var(--font-mono); letter-spacing: 1px; font-size: 0.88rem; }
+.field-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238495aa' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6 6.5-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+.field-select option { background: var(--bg-card); color: var(--text-1); }
+.field-textarea {
+  min-height: 110px;
+  resize: vertical;
+  line-height: 1.6;
+}
+.field-error {
+  font-size: 0.73rem;
+  color: var(--danger);
+  margin-top: 5px;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+.field-error.visible { display: flex; }
+.field-input.invalid,
+.field-select.invalid,
+.field-textarea.invalid {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-glow);
+}
+
+/* ── Incident Type Cards ───────────────────── */
+.incident-type-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.incident-card {
+  position: relative;
+  padding: 22px 18px;
+  background: var(--bg-input);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: center;
+}
+.incident-card:hover {
+  border-color: var(--text-3);
+  background: var(--bg-card-hover);
+}
+.incident-card.selected {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.incident-card.selected.stolen-card {
+  border-color: var(--danger);
+  background: var(--danger-dim);
+  box-shadow: 0 0 0 3px var(--danger-glow);
+}
+.incident-card input { display: none; }
+.incident-icon { font-size: 1.8rem; margin-bottom: 8px; }
+.incident-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+.incident-desc { font-size: 0.72rem; color: var(--text-2); line-height: 1.4; }
+
+/* ── Conditional Sections ──────────────────── */
+.conditional-section {
+  display: none;
+  padding: 20px 24px;
+  margin-top: 20px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--accent);
+  animation: fadeSlideIn 0.3s ease;
+}
+.conditional-section.visible { display: block; }
+.conditional-section.danger-border { border-left-color: var(--danger); }
+.conditional-title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text-1);
+}
+
+/* ── Checkbox & Radio ──────────────────────── */
+.check-group { display: flex; flex-direction: column; gap: 10px; }
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--text-2);
+  transition: color 0.2s;
+}
+.check-item:hover { color: var(--text-1); }
+.check-item input[type="checkbox"],
+.check-item input[type="radio"] {
+  appearance: none;
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-input);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  position: relative;
+}
+.check-item input[type="radio"] { border-radius: 50%; }
+.check-item input:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.check-item input:checked::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.check-item input[type="radio"]:checked::after {
+  content: '';
+  width: 8px; height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+.inline-radios {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.data-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 20px;
+}
+
+/* ── On-behalf Section ─────────────────────── */
+.behalf-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+.behalf-toggle input {
+  appearance: none;
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-input);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  position: relative;
+}
+.behalf-toggle input:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.behalf-toggle input:checked::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Navigation ────────────────────────────── */
+.form-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px 28px;
+  border-top: 1px solid var(--border);
+}
+.btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-prev {
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  padding: 11px 24px;
+}
+.btn-prev:hover { border-color: var(--text-3); color: var(--text-1); }
+.btn-prev:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-next {
+  background: linear-gradient(135deg, var(--accent), #a06a18);
+  color: #fff;
+  box-shadow: 0 2px 12px var(--accent-glow);
+}
+.btn-next:hover {
+  box-shadow: 0 4px 20px var(--accent-glow);
+  transform: translateY(-1px);
+}
+.btn-submit {
+  background: linear-gradient(135deg, var(--success), #188a4a);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(34,168,96,0.3);
+}
+.btn-submit:hover {
+  box-shadow: 0 4px 20px rgba(34,168,96,0.35);
+  transform: translateY(-1px);
+}
+
+/* ── Review / Summary ──────────────────────── */
+.review-section {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.review-header-icon { font-size: 1rem; }
+.review-header-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+.review-body { padding: 16px 20px; }
+.review-row {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  gap: 16px;
+}
+.review-row:last-child { border-bottom: none; }
+.review-key {
+  width: 180px;
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-3);
+  padding-top: 2px;
+}
+.review-value {
+  flex: 1;
+  font-size: 0.88rem;
+  color: var(--text-1);
+  word-break: break-word;
+}
+.review-value.mono { font-family: var(--font-mono); letter-spacing: 0.5px; }
+.review-value .badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.badge-lost { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(201,136,46,0.3); }
+.badge-stolen { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(217,68,68,0.3); }
+.badge-unknown { background: rgba(255,255,255,0.05); color: var(--text-2); border: 1px solid var(--border); }
+
+/* ── Declaration ───────────────────────────── */
+.declaration-box {
+  padding: 20px 24px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(201,136,46,0.2);
+  border-radius: var(--radius);
+  margin-top: 8px;
+}
+.declaration-text {
+  font-size: 0.82rem;
+  color: var(--text-2);
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+
+/* ── Success State ─────────────────────────── */
+.success-view {
+  display: none;
+  text-align: center;
+  padding: 60px 40px;
+  animation: fadeSlideIn 0.5s ease;
+}
+.success-view.active { display: block; }
+.success-icon {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  font-size: 2.2rem;
+  box-shadow: 0 0 0 8px var(--success-dim), 0 8px 30px rgba(34,168,96,0.2);
+  animation: pulseSuccess 2s ease infinite;
+}
+@keyframes pulseSuccess {
+  0%, 100% { box-shadow: 0 0 0 8px var(--success-dim), 0 8px 30px rgba(34,168,96,0.2); }
+  50% { box-shadow: 0 0 0 14px rgba(34,168,96,0.06), 0 8px 30px rgba(34,168,96,0.15); }
+}
+.success-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.success-msg {
+  font-size: 0.92rem;
+  color: var(--text-2);
+  max-width: 440px;
+  margin: 0 auto 24px;
+  line-height: 1.7;
+}
+.success-case {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--accent);
+  font-weight: 600;
+  padding: 12px 24px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(201,136,46,0.2);
+  border-radius: var(--radius);
+  display: inline-block;
+  letter-spacing: 1px;
+}
+
+/* ── Footer ────────────────────────────────── */
+.app-footer {
+  margin-top: 20px;
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  color: var(--text-3);
+}
+.classification-badge {
+  padding: 4px 12px;
+  border: 1px solid rgba(217,68,68,0.3);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--danger);
+  background: var(--danger-dim);
+}
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 860px) {
+  .form-wrapper { flex-direction: column; }
+  .step-sidebar { width: 100%; position: static; }
+  .step-list {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .step-item { flex-direction: column; align-items: center; text-align: center; padding: 10px 14px; min-width: 80px; }
+  .step-item:not(:last-child)::after {
+    left: auto; top: 26px; bottom: auto;
+    right: -2px;
+    width: calc(100%); height: 2px;
+  }
+  .step-info { display: none; }
+  .form-step { padding: 24px 20px; }
+  .form-nav { padding: 16px 20px 22px; }
+  .field-grid { grid-template-columns: 1fr; }
+  .incident-type-group { grid-template-columns: 1fr; }
+  .app-header { flex-direction: column; gap: 12px; text-align: center; }
+  .header-right { text-align: center; }
+}
+@media (max-width: 500px) {
+  .app { padding: 12px 8px 30px; }
+  .data-type-grid { grid-template-columns: 1fr; }
+  .inline-radios { flex-direction: column; gap: 8px; }
+}
+
+/* ── Print ─────────────────────────────────── */
+@media print {
+  body { background: #fff; color: #111; }
+  .app-header, .form-main, .review-section { border-color: #ccc; background: #fff; }
+  .step-sidebar, .form-nav, .btn { display: none; }
+  .form-step { display: block !important; padding: 20px 0; }
+  .section-header { border-bottom-color: #ccc; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-mark"></div>
+      <div>
+        <div class="header-title">IT Asset Incident Report</div>
+        <div class="header-subtitle">Lost &amp; Stolen Device Reporting System</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="case-id" id="caseId"></div>
+      <div class="case-date" id="caseDate"></div>
+    </div>
+  </header>
+
+  <!-- Main Form -->
+  <div class="form-wrapper">
+    <!-- Sidebar Progress -->
+    <aside class="step-sidebar">
+      <ul class="step-list" id="stepList">
+        <li class="step-item active" data-step="0">
+          <div class="step-dot"><span class="step-num">1</span><span class="check-icon">✓</span></div>
+          <div class="step-info"><div class="step-label">Reporter Info</div><div class="step-desc">Your details</div></div>
+        </li>
+        <li class="step-item" data-step="1">
+          <div class="step-dot"><span class="step-num">2</span><span class="check-icon">✓</span></div>
+          <div class="step-info"><div class="step-label">Asset Details</div><div class="step-desc">Device information</div></div>
+        </li>
+        <li class="step-item" data-step="2">
+          <div class="step-dot"><span class="step-num">3</span><span class="check-icon">✓</span></div>
+          <div class="step-info"><div class="step-label">Incident</div><div class="step-desc">What happened</div></div>
+        </li>
+        <li class="step-item" data-step="3">
+          <div class="step-dot"><span class="step-num">4</span><span class="check-icon">✓</span></div>
+          <div class="step-info"><div class="step-label">Data Security</div><div class="step-desc">Risk assessment</div></div>
+        </li>
+        <li class="step-item" data-step="4">
+          <div class="step-dot"><span class="step-num">5</span><span class="check-icon">✓</span></div>
+          <div class="step-info"><div class="step-label">Review</div><div class="step-desc">Confirm & submit</div></div>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Form Content -->
+    <div class="form-main">
+
+      <!-- ─── Step 1: Reporter Info ────────────────── -->
+      <div class="form-step active" data-step="0">
+        <div class="section-header">
+          <div class="section-number">Section 01</div>
+          <div class="section-title">Reporter Information</div>
+          <div class="section-subtitle">Provide your details so IT Security can follow up on this report.</div>
+        </div>
+        <div class="field-grid">
+          <div class="field-group">
+            <label class="field-label">Full Name <span class="req">*</span></label>
+            <input type="text" class="field-input" id="reporterName" placeholder="e.g. Jane Mokwena" required>
+            <div class="field-error" id="err-reporterName">Full name is required</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Employee ID <span class="req">*</span></label>
+            <input type="text" class="field-input mono" id="employeeId" placeholder="e.g. EMP-004521" required>
+            <div class="field-error" id="err-employeeId">Employee ID is required</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Department <span class="req">*</span></label>
+            <select class="field-select" id="department" required>
+              <option value="">Select department...</option>
+              <option>IT</option>
+              <option>Finance</option>
+              <option>Human Resources</option>
+              <option>Marketing</option>
+              <option>Sales</option>
+              <option>Operations</option>
+              <option>Engineering</option>
+              <option>Legal</option>
+              <option>Executive</option>
+              <option>Customer Support</option>
+              <option>Research & Development</option>
+              <option>Other</option>
+            </select>
+            <div class="field-error" id="err-department">Department is required</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Email Address <span class="req">*</span></label>
+            <input type="email" class="field-input" id="email" placeholder="jane.mokwena@company.co.za" required>
+            <div class="field-error" id="err-email">Valid email address is required</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Phone Number</label>
+            <input type="tel" class="field-input" id="phone" placeholder="+27 82 000 0000">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Manager / Supervisor</label>
+            <input type="text" class="field-input" id="manager" placeholder="Name of your direct manager">
+          </div>
+          <div class="field-group full-width">
+            <label class="behalf-toggle">
+              <input type="checkbox" id="onBehalf" onchange="toggleBehalf()">
+              I am reporting on behalf of another employee
+            </label>
+            <div class="conditional-section" id="behalfSection">
+              <div class="conditional-title">Asset Holder Details</div>
+              <div class="field-grid">
+                <div class="field-group">
+                  <label class="field-label">Employee Name</label>
+                  <input type="text" class="field-input" id="behalfName" placeholder="Name of the asset holder">
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Employee ID</label>
+                  <input type="text" class="field-input mono" id="behalfEmpId" placeholder="EMP-XXXXXX">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Step 2: Asset Details ────────────────── -->
+      <div class="form-step" data-step="1">
+        <div class="section-header">
+          <div class="section-number">Section 02</div>
+          <div class="section-title">Asset Details</div>
+          <div class="section-subtitle">Describe the lost or stolen device. Check your asset tag sticker or IT inventory for reference.</div>
+        </div>
+        <div class="field-grid">
+          <div class="field-group">
+            <label class="field-label">Asset Tag / ID <span class="req">*</span></label>
+            <input type="text" class="field-input mono" id="assetTag" placeholder="e.g. AST-2024-00781" required>
+            <div class="field-error" id="err-assetTag">Asset tag is required</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Asset Type <span class="req">*</span></label>
+            <select class="field-select" id="assetType" required>
+              <option value="">Select asset type...</option>
+              <option>Laptop</option>
+              <option>Desktop</option>
+              <option>Tablet</option>
+              <option>Mobile Phone</option>
+              <option>Monitor</option>
+              <option>Printer</option>
+              <option>External Hard Drive</option>
+              <option>USB Flash Drive</option>
+              <option>Projector</option>
+              <option>Network Equipment</option>
+              <option>Other</option>
+            </select>
+            <div class="field-error" id="err-assetType">Asset type is required</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Make / Manufacturer</label>
+            <input type="text" class="field-input" id="assetMake" placeholder="e.g. Dell, Lenovo, Apple, HP">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Model</label>
+            <input type="text" class="field-input" id="assetModel" placeholder="e.g. Latitude 7430, ThinkPad X1">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Serial Number</label>
+            <input type="text" class="field-input mono" id="serialNumber" placeholder="e.g. SN-X9F2K4M8P1">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Operating System</label>
+            <select class="field-select" id="assetOS">
+              <option value="">Select if applicable...</option>
+              <option>Windows 11</option>
+              <option>Windows 10</option>
+              <option>macOS</option>
+              <option>Linux</option>
+              <option>ChromeOS</option>
+              <option>iOS</option>
+              <option>Android</option>
+              <option>N/A</option>
+            </select>
+          </div>
+          <div class="field-group full-width">
+            <label class="field-label">Additional Description</label>
+            <textarea class="field-textarea" id="assetDesc" placeholder="Any identifying features — colour, stickers, case type, accessories included, condition, etc." style="min-height: 80px;"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Step 3: Incident Details ─────────────── -->
+      <div class="form-step" data-step="2">
+        <div class="section-header">
+          <div class="section-number">Section 03</div>
+          <div class="section-title">Incident Details</div>
+          <div class="section-subtitle">Describe the circumstances surrounding the loss or theft.</div>
+        </div>
+
+        <div class="field-group full-width" style="margin-bottom: 24px;">
+          <label class="field-label">Incident Classification <span class="req">*</span></label>
+          <div class="incident-type-group" id="incidentTypeGroup">
+            <label class="incident-card" onclick="selectIncidentType('lost', this)">
+              <input type="radio" name="incidentType" value="lost">
+              <div class="incident-icon">📦</div>
+              <div class="incident-label">Lost</div>
+              <div class="incident-desc">Misplaced or left behind — location unknown</div>
+            </label>
+            <label class="incident-card stolen-card" onclick="selectIncidentType('stolen', this)">
+              <input type="radio" name="incidentType" value="stolen">
+              <div class="incident-icon">🚨</div>
+              <div class="incident-label">Stolen</div>
+              <div class="incident-desc">Taken unlawfully — theft suspected or confirmed</div>
+            </label>
+            <label class="incident-card" onclick="selectIncidentType('unknown', this)">
+              <input type="radio" name="incidentType" value="unknown">
+              <div class="incident-icon">❓</div>
+              <div class="incident-label">Unknown</div>
+              <div class="incident-desc">Unable to determine whether lost or stolen</div>
+            </label>
+          </div>
+          <div class="field-error" id="err-incidentType">Please select an incident type</div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field-group">
+            <label class="field-label">Date of Incident <span class="req">*</span></label>
+            <input type="date" class="field-input" id="incidentDate" required>
+            <div class="field-error" id="err-incidentDate">Date of incident is required</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Approximate Time</label>
+            <input type="time" class="field-input" id="incidentTime">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Location <span class="req">*</span></label>
+            <input type="text" class="field-input" id="incidentLocation" placeholder="e.g. Sandton City Mall, Parking Level B2" required>
+            <div class="field-error" id="err-incidentLocation">Location is required</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Location Type</label>
+            <select class="field-select" id="locationType">
+              <option value="">Select...</option>
+              <option>Office</option>
+              <option>Home</option>
+              <option>Public Transport</option>
+              <option>Hotel</option>
+              <option>Conference / Event</option>
+              <option>Restaurant / Café</option>
+              <option>Airport</option>
+              <option>Vehicle</option>
+              <option>Parking Area</option>
+              <option>Street / Outdoor</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field-group full-width">
+            <label class="field-label">Description of Circumstances <span class="req">*</span></label>
+            <textarea class="field-textarea" id="incidentDesc" placeholder="Describe what happened in detail — when you last had the device, how you discovered it was missing, any witnesses, etc." required></textarea>
+            <div class="field-error" id="err-incidentDesc">Please describe the circumstances</div>
+          </div>
+        </div>
+
+        <!-- Stolen-specific section -->
+        <div class="conditional-section danger-border" id="stolenSection">
+          <div class="conditional-title">🚨 Theft Report Details</div>
+          <div class="field-grid">
+            <div class="field-group full-width" style="margin-bottom: 8px;">
+              <label class="field-label">Has a police report been filed?</label>
+              <div class="inline-radios">
+                <label class="check-item"><input type="radio" name="policeReport" value="yes" onchange="togglePoliceDetails()"> Yes</label>
+                <label class="check-item"><input type="radio" name="policeReport" value="no" onchange="togglePoliceDetails()"> No</label>
+                <label class="check-item"><input type="radio" name="policeReport" value="pending" onchange="togglePoliceDetails()"> Pending</label>
+              </div>
+            </div>
+            <div class="field-group" id="policeRefGroup" style="display:none;">
+              <label class="field-label">Police Report / CAS Number</label>
+              <input type="text" class="field-input mono" id="policeRef" placeholder="e.g. CAS 234/2026">
+            </div>
+            <div class="field-group" id="policeDeptGroup" style="display:none;">
+              <label class="field-label">Police Station</label>
+              <input type="text" class="field-input" id="policeDept" placeholder="e.g. Sandton SAPS">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Step 4: Data Security ────────────────── -->
+      <div class="form-step" data-step="3">
+        <div class="section-header">
+          <div class="section-number">Section 04</div>
+          <div class="section-title">Data Security Assessment</div>
+          <div class="section-subtitle">Help IT Security evaluate the risk exposure from this incident.</div>
+        </div>
+        <div class="field-grid">
+          <div class="field-group full-width">
+            <label class="field-label">Did the device contain sensitive or confidential data? <span class="req">*</span></label>
+            <div class="inline-radios">
+              <label class="check-item"><input type="radio" name="sensitiveData" value="yes" onchange="toggleDataTypes()"> Yes</label>
+              <label class="check-item"><input type="radio" name="sensitiveData" value="no" onchange="toggleDataTypes()"> No</label>
+              <label class="check-item"><input type="radio" name="sensitiveData" value="unsure" onchange="toggleDataTypes()"> Unsure</label>
+            </div>
+            <div class="field-error" id="err-sensitiveData">Please indicate whether sensitive data was present</div>
+          </div>
+
+          <div class="field-group full-width conditional-section" id="dataTypesSection">
+            <div class="conditional-title">Types of Data Present</div>
+            <div class="data-type-grid">
+              <label class="check-item"><input type="checkbox" name="dataTypes" value="Customer PII"> Customer PII (Personal Information)</label>
+              <label class="check-item"><input type="checkbox" name="dataTypes" value="Financial Records"> Financial Records</label>
+              <label class="check-item"><input type="checkbox" name="dataTypes" value="Employee Records"> Employee Records</label>
+              <label class="check-item"><input type="checkbox" name="dataTypes" value="Trade Secrets"> Trade Secrets / IP</label>
+              <label class="check-item"><input type="checkbox" name="dataTypes" value="Source Code"> Source Code</label>
+              <label class="check-item"><input type="checkbox" name="dataTypes" value="Credentials"> Credentials / Passwords</label>
+              <label class="check-item"><input type="checkbox" name="dataTypes" value="Healthcare Data"> Healthcare / Medical Data</label>
+              <label class="check-item"><input type="checkbox" name="dataTypes" value="Other"> Other Sensitive Data</label>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Was the device encrypted? <span class="req">*</span></label>
+            <div class="inline-radios">
+              <label class="check-item"><input type="radio" name="encrypted" value="yes"> Yes</label>
+              <label class="check-item"><input type="radio" name="encrypted" value="no"> No</label>
+              <label class="check-item"><input type="radio" name="encrypted" value="unsure"> Unsure</label>
+            </div>
+            <div class="field-error" id="err-encrypted">Please indicate encryption status</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Was the device password / PIN protected? <span class="req">*</span></label>
+            <div class="inline-radios">
+              <label class="check-item"><input type="radio" name="passwordProtected" value="yes"> Yes</label>
+              <label class="check-item"><input type="radio" name="passwordProtected" value="no"> No</label>
+              <label class="check-item"><input type="radio" name="passwordProtected" value="unsure"> Unsure</label>
+            </div>
+            <div class="field-error" id="err-passwordProtected">Please indicate password protection status</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Has remote wipe been initiated?</label>
+            <div class="inline-radios">
+              <label class="check-item"><input type="radio" name="remoteWipe" value="yes"> Yes</label>
+              <label class="check-item"><input type="radio" name="remoteWipe" value="no"> No</label>
+              <label class="check-item"><input type="radio" name="remoteWipe" value="na"> Not Applicable</label>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Was VPN active at time of loss?</label>
+            <div class="inline-radios">
+              <label class="check-item"><input type="radio" name="vpnActive" value="yes"> Yes</label>
+              <label class="check-item"><input type="radio" name="vpnActive" value="no"> No</label>
+              <label class="check-item"><input type="radio" name="vpnActive" value="unsure"> Unsure</label>
+            </div>
+          </div>
+          <div class="field-group full-width">
+            <label class="field-label">Additional Security Concerns</label>
+            <textarea class="field-textarea" id="securityNotes" placeholder="Any other security-related details — active sessions, saved browser passwords, access tokens, etc." style="min-height: 80px;"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Step 5: Review & Submit ──────────────── -->
+      <div class="form-step" data-step="4">
+        <div class="section-header">
+          <div class="section-number">Section 05</div>
+          <div class="section-title">Review &amp; Submit</div>
+          <div class="section-subtitle">Review all details below before submitting. Click any section header to go back and edit.</div>
+        </div>
+        <div id="reviewContent"></div>
+        <div class="declaration-box">
+          <div class="declaration-text">
+            I hereby declare that the information provided in this report is true and accurate to the best of my knowledge. I understand that filing a false report may result in disciplinary action. I acknowledge that IT Security will investigate this incident and may contact me for further details.
+          </div>
+          <label class="check-item">
+            <input type="checkbox" id="declaration">
+            <span>I confirm the above declaration and authorise IT Security to proceed with the investigation</span>
+          </label>
+          <div class="field-error" id="err-declaration" style="margin-top: 8px;">You must accept the declaration to submit</div>
+        </div>
+      </div>
+
+      <!-- ─── Success View ─────────────────────────── -->
+      <div class="success-view" id="successView">
+        <div class="success-icon">✓</div>
+        <div class="success-title">Report Submitted Successfully</div>
+        <div class="success-msg">Your email client has been opened with the full incident report addressed to the IT Security team and a copy to yourself. Please review and click <strong>Send</strong> in your email client to complete the submission.</div>
+        <div class="success-case" id="successCaseId"></div>
+        <div class="email-recipients" style="margin-top: 20px; text-align: left; display: inline-block;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); font-weight: 700; margin-bottom: 8px;">Report sent to:</div>
+          <div id="recipientList" style="font-size: 0.82rem; color: var(--text-2); line-height: 1.8;"></div>
+        </div>
+        <div style="margin-top: 24px;">
+          <button class="btn btn-next" onclick="resendEmail()" style="display: inline-flex; font-size: 0.82rem; padding: 10px 20px;">Re-open Email</button>
+        </div>
+        <div style="margin-top: 16px; color: var(--text-3); font-size: 0.78rem;">If your email client did not open, check your pop-up blocker settings.</div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="form-nav" id="formNav">
+        <button class="btn btn-prev" id="btnPrev" onclick="prevStep()" disabled>← Previous</button>
+        <button class="btn btn-next" id="btnNext" onclick="nextStep()">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <span>IT Asset Management — Internal Use Only</span>
+    <div class="classification-badge">Confidential</div>
+  </footer>
+</div>
+
+<script>
+/* ── State ──────────────────────────────────── */
+let currentStep = 0;
+const totalSteps = 5;
+let selectedIncidentType = '';
+
+/* ── Case Number Generation ─────────────────── */
+function generateCaseId() {
+  const d = new Date();
+  const yy = String(d.getFullYear()).slice(-2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const rand = String(Math.floor(1000 + Math.random() * 9000));
+  return `IR-${yy}${mm}${dd}-${rand}`;
+}
+const caseNumber = generateCaseId();
+document.getElementById('caseId').textContent = caseNumber;
+document.getElementById('caseDate').textContent = `Filed: ${new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+
+/* ── Step Navigation ────────────────────────── */
+function showStep(n) {
+  const steps = document.querySelectorAll('.form-step');
+  const items = document.querySelectorAll('.step-item');
+  steps.forEach(s => s.classList.remove('active'));
+  items.forEach(i => i.classList.remove('active'));
+
+  if (n < totalSteps) {
+    steps[n].classList.add('active');
+    steps[n].style.animation = 'none';
+    steps[n].offsetHeight;
+    steps[n].style.animation = '';
+  }
+
+  items[n] && items[n].classList.add('active');
+  for (let i = 0; i < n; i++) items[i].classList.add('completed');
+  for (let i = n; i < totalSteps; i++) items[i].classList.remove('completed');
+
+  const prev = document.getElementById('btnPrev');
+  const next = document.getElementById('btnNext');
+  prev.disabled = n === 0;
+
+  if (n === totalSteps - 1) {
+    next.textContent = 'Submit Report';
+    next.className = 'btn btn-submit';
+    next.onclick = submitForm;
+    generateReview();
+  } else {
+    next.textContent = 'Continue →';
+    next.className = 'btn btn-next';
+    next.onclick = nextStep;
+  }
+
+  document.querySelector('.form-main').scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextStep() {
+  if (validateStep(currentStep)) {
+    currentStep++;
+    showStep(currentStep);
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    showStep(currentStep);
+  }
+}
+
+/* ── Sidebar Click Navigation ───────────────── */
+document.querySelectorAll('.step-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const target = parseInt(this.dataset.step);
+    if (target < currentStep) {
+      currentStep = target;
+      showStep(currentStep);
+    } else if (target === currentStep + 1) {
+      nextStep();
+    }
+  });
+});
+
+/* ── Validation ─────────────────────────────── */
+function clearErrors() {
+  document.querySelectorAll('.field-error').forEach(e => e.classList.remove('visible'));
+  document.querySelectorAll('.invalid').forEach(e => e.classList.remove('invalid'));
+}
+
+function showError(id, inputId) {
+  const err = document.getElementById(id);
+  if (err) err.classList.add('visible');
+  if (inputId) {
+    const inp = document.getElementById(inputId);
+    if (inp) inp.classList.add('invalid');
+  }
+}
+
+function val(id) { return (document.getElementById(id)?.value || '').trim(); }
+function radio(name) { const r = document.querySelector(`input[name="${name}"]:checked`); return r ? r.value : ''; }
+
+function validateStep(step) {
+  clearErrors();
+  let valid = true;
+
+  if (step === 0) {
+    if (!val('reporterName')) { showError('err-reporterName', 'reporterName'); valid = false; }
+    if (!val('employeeId')) { showError('err-employeeId', 'employeeId'); valid = false; }
+    if (!val('department')) { showError('err-department', 'department'); valid = false; }
+    const email = val('email');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('err-email', 'email'); valid = false; }
+  } else if (step === 1) {
+    if (!val('assetTag')) { showError('err-assetTag', 'assetTag'); valid = false; }
+    if (!val('assetType')) { showError('err-assetType', 'assetType'); valid = false; }
+  } else if (step === 2) {
+    if (!selectedIncidentType) { showError('err-incidentType'); valid = false; }
+    if (!val('incidentDate')) { showError('err-incidentDate', 'incidentDate'); valid = false; }
+    if (!val('incidentLocation')) { showError('err-incidentLocation', 'incidentLocation'); valid = false; }
+    if (!val('incidentDesc')) { showError('err-incidentDesc', 'incidentDesc'); valid = false; }
+  } else if (step === 3) {
+    if (!radio('sensitiveData')) { showError('err-sensitiveData'); valid = false; }
+    if (!radio('encrypted')) { showError('err-encrypted'); valid = false; }
+    if (!radio('passwordProtected')) { showError('err-passwordProtected'); valid = false; }
+  } else if (step === 4) {
+    if (!document.getElementById('declaration').checked) { showError('err-declaration'); valid = false; }
+  }
+
+  if (!valid) {
+    const firstError = document.querySelector('.field-error.visible');
+    if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  return valid;
+}
+
+/* Remove invalid state on input */
+document.addEventListener('input', function(e) {
+  if (e.target.classList.contains('invalid')) {
+    e.target.classList.remove('invalid');
+    const errEl = e.target.closest('.field-group')?.querySelector('.field-error');
+    if (errEl) errEl.classList.remove('visible');
+  }
+});
+
+/* ── Conditional Logic ──────────────────────── */
+function selectIncidentType(type, el) {
+  selectedIncidentType = type;
+  document.querySelectorAll('.incident-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  el.querySelector('input').checked = true;
+  document.getElementById('stolenSection').classList.toggle('visible', type === 'stolen');
+  document.getElementById('err-incidentType').classList.remove('visible');
+}
+
+function toggleBehalf() {
+  const on = document.getElementById('onBehalf').checked;
+  document.getElementById('behalfSection').classList.toggle('visible', on);
+}
+
+function togglePoliceDetails() {
+  const v = radio('policeReport');
+  const show = v === 'yes';
+  document.getElementById('policeRefGroup').style.display = show ? '' : 'none';
+  document.getElementById('policeDeptGroup').style.display = show ? '' : 'none';
+}
+
+function toggleDataTypes() {
+  const v = radio('sensitiveData');
+  document.getElementById('dataTypesSection').classList.toggle('visible', v === 'yes' || v === 'unsure');
+  document.getElementById('err-sensitiveData').classList.remove('visible');
+}
+
+/* ── Review Generation ──────────────────────── */
+function rv(label, value, cls) {
+  if (!value) return '';
+  return `<div class="review-row"><div class="review-key">${label}</div><div class="review-value ${cls || ''}">${value}</div></div>`;
+}
+
+function generateReview() {
+  const container = document.getElementById('reviewContent');
+  const incidentBadge = selectedIncidentType === 'stolen'
+    ? '<span class="badge badge-stolen">Stolen</span>'
+    : selectedIncidentType === 'lost'
+      ? '<span class="badge badge-lost">Lost</span>'
+      : '<span class="badge badge-unknown">Unknown</span>';
+
+  const checkedDataTypes = [...document.querySelectorAll('input[name="dataTypes"]:checked')].map(c => c.value).join(', ');
+
+  let html = '';
+
+  // Reporter
+  html += `<div class="review-section">
+    <div class="review-header" onclick="currentStep=0;showStep(0);">
+      <span class="review-header-icon">👤</span>
+      <span class="review-header-title">Reporter Information</span>
+    </div><div class="review-body">
+      ${rv('Name', val('reporterName'))}
+      ${rv('Employee ID', val('employeeId'), 'mono')}
+      ${rv('Department', val('department'))}
+      ${rv('Email', val('email'))}
+      ${rv('Phone', val('phone'))}
+      ${rv('Manager', val('manager'))}
+      ${document.getElementById('onBehalf').checked ? rv('On Behalf Of', val('behalfName') + (val('behalfEmpId') ? ` (${val('behalfEmpId')})` : '')) : ''}
+    </div></div>`;
+
+  // Asset
+  html += `<div class="review-section">
+    <div class="review-header" onclick="currentStep=1;showStep(1);">
+      <span class="review-header-icon">💻</span>
+      <span class="review-header-title">Asset Details</span>
+    </div><div class="review-body">
+      ${rv('Asset Tag', val('assetTag'), 'mono')}
+      ${rv('Type', val('assetType'))}
+      ${rv('Make', val('assetMake'))}
+      ${rv('Model', val('assetModel'))}
+      ${rv('Serial Number', val('serialNumber'), 'mono')}
+      ${rv('Operating System', val('assetOS'))}
+      ${rv('Description', val('assetDesc'))}
+    </div></div>`;
+
+  // Incident
+  html += `<div class="review-section">
+    <div class="review-header" onclick="currentStep=2;showStep(2);">
+      <span class="review-header-icon">📋</span>
+      <span class="review-header-title">Incident Details</span>
+    </div><div class="review-body">
+      ${rv('Classification', incidentBadge)}
+      ${rv('Date', val('incidentDate'))}
+      ${rv('Time', val('incidentTime') || '—')}
+      ${rv('Location', val('incidentLocation'))}
+      ${rv('Location Type', val('locationType'))}
+      ${rv('Description', val('incidentDesc'))}
+      ${selectedIncidentType === 'stolen' ? rv('Police Report', radio('policeReport') ? radio('policeReport').charAt(0).toUpperCase() + radio('policeReport').slice(1) : '—') : ''}
+      ${radio('policeReport') === 'yes' ? rv('CAS Number', val('policeRef'), 'mono') : ''}
+      ${radio('policeReport') === 'yes' ? rv('Police Station', val('policeDept')) : ''}
+    </div></div>`;
+
+  // Security
+  html += `<div class="review-section">
+    <div class="review-header" onclick="currentStep=3;showStep(3);">
+      <span class="review-header-icon">🔒</span>
+      <span class="review-header-title">Data Security Assessment</span>
+    </div><div class="review-body">
+      ${rv('Sensitive Data', radio('sensitiveData') ? radio('sensitiveData').charAt(0).toUpperCase() + radio('sensitiveData').slice(1) : '—')}
+      ${checkedDataTypes ? rv('Data Types', checkedDataTypes) : ''}
+      ${rv('Encrypted', radio('encrypted') ? radio('encrypted').charAt(0).toUpperCase() + radio('encrypted').slice(1) : '—')}
+      ${rv('Password Protected', radio('passwordProtected') ? radio('passwordProtected').charAt(0).toUpperCase() + radio('passwordProtected').slice(1) : '—')}
+      ${rv('Remote Wipe', radio('remoteWipe') ? radio('remoteWipe').charAt(0).toUpperCase() + radio('remoteWipe').slice(1) : '—')}
+      ${rv('VPN Active', radio('vpnActive') ? radio('vpnActive').charAt(0).toUpperCase() + radio('vpnActive').slice(1) : '—')}
+      ${rv('Security Notes', val('securityNotes'))}
+    </div></div>`;
+
+  container.innerHTML = html;
+}
+
+/* ── Email Report Builder ───────────────────── */
+const IT_TEAM = [
+  'Lola.Maimane@gzican.com',
+  'Richard.Beukes@gzican.com',
+  'Hennie.Mohlatswa@gzican.com'
+];
+
+function cap(v) { return v ? v.charAt(0).toUpperCase() + v.slice(1) : '—'; }
+
+function buildEmailBody() {
+  const sep = '─'.repeat(50);
+  const checkedDataTypes = [...document.querySelectorAll('input[name="dataTypes"]:checked')].map(c => c.value).join(', ');
+  const incType = selectedIncidentType.toUpperCase();
+
+  let body = '';
+  body += `IT ASSET INCIDENT REPORT\n`;
+  body += `Case Reference: ${caseNumber}\n`;
+  body += `Date Filed: ${new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })}\n`;
+  body += `Classification: ${incType}\n`;
+  body += `${sep}\n\n`;
+
+  body += `REPORTER INFORMATION\n${sep}\n`;
+  body += `Name:            ${val('reporterName')}\n`;
+  body += `Employee ID:     ${val('employeeId')}\n`;
+  body += `Department:      ${val('department')}\n`;
+  body += `Email:           ${val('email')}\n`;
+  if (val('phone'))   body += `Phone:           ${val('phone')}\n`;
+  if (val('manager')) body += `Manager:         ${val('manager')}\n`;
+  if (document.getElementById('onBehalf').checked) {
+    body += `Reporting for:   ${val('behalfName')}`;
+    if (val('behalfEmpId')) body += ` (${val('behalfEmpId')})`;
+    body += `\n`;
+  }
+  body += `\n`;
+
+  body += `ASSET DETAILS\n${sep}\n`;
+  body += `Asset Tag:       ${val('assetTag')}\n`;
+  body += `Asset Type:      ${val('assetType')}\n`;
+  if (val('assetMake'))    body += `Make:            ${val('assetMake')}\n`;
+  if (val('assetModel'))   body += `Model:           ${val('assetModel')}\n`;
+  if (val('serialNumber')) body += `Serial Number:   ${val('serialNumber')}\n`;
+  if (val('assetOS'))      body += `Operating System:${val('assetOS')}\n`;
+  if (val('assetDesc'))    body += `Description:     ${val('assetDesc')}\n`;
+  body += `\n`;
+
+  body += `INCIDENT DETAILS\n${sep}\n`;
+  body += `Classification:  ${incType}\n`;
+  body += `Date:            ${val('incidentDate')}\n`;
+  if (val('incidentTime'))    body += `Time:            ${val('incidentTime')}\n`;
+  body += `Location:        ${val('incidentLocation')}\n`;
+  if (val('locationType'))    body += `Location Type:   ${val('locationType')}\n`;
+  body += `\nCircumstances:\n${val('incidentDesc')}\n`;
+  if (selectedIncidentType === 'stolen') {
+    body += `\nPolice Report Filed: ${cap(radio('policeReport'))}\n`;
+    if (radio('policeReport') === 'yes') {
+      if (val('policeRef'))  body += `CAS Number:      ${val('policeRef')}\n`;
+      if (val('policeDept')) body += `Police Station:  ${val('policeDept')}\n`;
+    }
+  }
+  body += `\n`;
+
+  body += `DATA SECURITY ASSESSMENT\n${sep}\n`;
+  body += `Sensitive Data:      ${cap(radio('sensitiveData'))}\n`;
+  if (checkedDataTypes) body += `Data Types:          ${checkedDataTypes}\n`;
+  body += `Encrypted:           ${cap(radio('encrypted'))}\n`;
+  body += `Password Protected:  ${cap(radio('passwordProtected'))}\n`;
+  if (radio('remoteWipe')) body += `Remote Wipe:         ${cap(radio('remoteWipe'))}\n`;
+  if (radio('vpnActive'))  body += `VPN Active:          ${cap(radio('vpnActive'))}\n`;
+  if (val('securityNotes')) body += `\nAdditional Concerns:\n${val('securityNotes')}\n`;
+  body += `\n`;
+
+  body += `${sep}\n`;
+  body += `This report was generated by the IT Asset Incident Reporting System.\n`;
+  body += `Please do not reply to this email — contact the reporter directly.\n`;
+
+  return body;
+}
+
+function buildMailtoUrl() {
+  const reporterEmail = val('email');
+  const incType = selectedIncidentType.toUpperCase();
+  const subject = `[${incType}] IT Asset Incident Report — ${caseNumber} — ${val('assetType')} (${val('assetTag')})`;
+  const body = buildEmailBody();
+
+  const toList = IT_TEAM.join(',');
+  const cc = reporterEmail;
+
+  return `mailto:${toList}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+let lastMailtoUrl = '';
+
+function sendEmail() {
+  lastMailtoUrl = buildMailtoUrl();
+  window.location.href = lastMailtoUrl;
+}
+
+function resendEmail() {
+  if (lastMailtoUrl) window.location.href = lastMailtoUrl;
+}
+
+/* ── Submit ──────────────────────────────────── */
+function submitForm() {
+  if (!validateStep(4)) return;
+
+  // Send the email
+  sendEmail();
+
+  // Show success view
+  document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('formNav').style.display = 'none';
+  document.getElementById('successView').classList.add('active');
+  document.getElementById('successCaseId').textContent = caseNumber;
+
+  // Show recipient list
+  const reporterEmail = val('email');
+  const allRecipients = [...IT_TEAM.map(e => `<div>IT Team: <span style="color:var(--text-1);font-family:var(--font-mono);font-size:0.8rem;">${e}</span></div>`),
+    `<div>Reporter (CC): <span style="color:var(--text-1);font-family:var(--font-mono);font-size:0.8rem;">${reporterEmail}</span></div>`
+  ];
+  document.getElementById('recipientList').innerHTML = allRecipients.join('');
+
+  document.querySelectorAll('.step-item').forEach(i => i.classList.add('completed'));
+  document.querySelectorAll('.step-item').forEach(i => i.classList.remove('active'));
+}
+
+/* ── Init ────────────────────────────────────── */
+document.getElementById('incidentDate').max = new Date().toISOString().split('T')[0];
+showStep(0);
+</script>
+</body>
+</html>
