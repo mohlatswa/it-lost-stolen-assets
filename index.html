@@ -1545,9 +1545,10 @@ async function submitForm() {
   const htmlBody = buildHtmlEmail();
 
   try {
-    const response = await fetch(FLOW_URL, {
+    await fetch(FLOW_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      mode:   'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         subject:  subject,
         to:       IT_TEAM.join(';'),
@@ -1555,8 +1556,6 @@ async function submitForm() {
         body:     htmlBody
       })
     });
-
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     // Show success
     document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
